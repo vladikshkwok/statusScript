@@ -17,7 +17,6 @@ public class Main {
 
     public static void main(String[] args) {
         ArrayList<Well> wells = new ArrayList<>();
-
         String query = "select ww.id, COALESCE(ww.alias, ww.name) as 'Name', ww.wellbore_id, ww.source_id, ws.product_key, ww.timezone, ww.timeshift, ww.logs_offset, wb.current_depth, wgp.name" +
                 " from WITS_WELL ww inner join WITS_SOURCE ws ON ww.source_id=ws.id inner join WITS_WELLBORE wb ON ww.wellbore_id=wb.id inner join WITS_WELL_PROP wwp on ww.id=wwp.well_id" +
                 " inner join WITS_WELL_GROUP wgp on wwp.group_id=wgp.id where wwp.status_id!=1 order by wgp.name, Name";
