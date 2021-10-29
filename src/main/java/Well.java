@@ -1,9 +1,6 @@
 import java.sql.*;
 import java.util.ArrayList;
 
-
-
-@SuppressWarnings("SpellCheckingInspection")
 public class Well {
     final int id;
     final int wellboreId;
@@ -18,6 +15,7 @@ public class Well {
     boolean isGRPorKRS, isGTITimeOk, isGTIDepthOk, isZTLSOk, isVideoOk;
     //    int rec1, rec2, rec8, rec12, rec13, rec55, rec56;
     final ArrayList<Record> records = new ArrayList<>();
+    ArrayList<String> cameras;
 
     public Well(int id, String name, int wellboreId, int sourceId, String productKey, String timeZone, int timeshift, String logsOffset, double currentDepth, String groupName) {
         this.id = id;
@@ -30,6 +28,7 @@ public class Well {
         this.timeZone = timeZone;
         this.logsOffset = logsOffset;
         this.groupName = groupName;
+        cameras = new ArrayList<>();
     }
 
     public void setRecords(Connection connection) {
