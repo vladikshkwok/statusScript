@@ -1,4 +1,3 @@
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.*;
@@ -33,7 +32,7 @@ public class Status {
                 con.close();
                 stmt.close();
                 rs.close();
-            } catch (SQLException se) {
+            } catch (SQLException ignored) {
             }
         }
     }

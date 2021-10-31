@@ -12,7 +12,7 @@ public class Well {
     final String timeZone;
     final String logsOffset;
     final String groupName;
-    boolean isGRPorKRS, isGTITimeOk, isGTIDepthOk, isZTLSOk, isVideoOk;
+    boolean isGRPorKRS, isGTITimeOk=true, isGTIDepthOk=true, isZTLSOk=true, isVideoOk=true;
     //    int rec1, rec2, rec8, rec12, rec13, rec55, rec56;
     final ArrayList<Record> records = new ArrayList<>();
     ArrayList<String> cameras;

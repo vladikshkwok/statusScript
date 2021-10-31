@@ -92,10 +92,6 @@ public class WellValidator {
                     if (channel.isClosed()) {
                         break;
                     }
-                    try {
-                        Thread.sleep(1000);
-                    } catch (Exception ee) {
-                    }
                 }
                 well.cameras = (ArrayList<String>) Arrays.stream(cameras.split("\n")).collect(Collectors.toList());
                 channel.disconnect();
@@ -110,9 +106,12 @@ public class WellValidator {
             for (int i = 0; i < well.cameras.size(); i++) {
                 if (well.cameras.get(i).matches(".*OK.*"))
                     well.cameras.set(i, "OK");
-                else {
-                    System.out.println(well.name + " камера " + well.cameras.get(i) + " not ok");
+                else if (well.cameras.get(i).matches(".*ERROR.*")) {
                     well.isVideoOk = false;
+                    System.out.println(well.name + " камера " + well.cameras.get(i) + " not ok");
+                }
+                else {
+                    well.isVideoOk = true;
                 }
             }
         }
