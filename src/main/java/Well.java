@@ -1,5 +1,14 @@
+import com.google.gson.Gson;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.reflect.Type;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Map;
 
 public class Well {
     final int id;
@@ -12,12 +21,17 @@ public class Well {
     final String timeZone;
     final String logsOffset;
     final String groupName;
-    boolean isGRPorKRS, isGTITimeOk=true, isGTIDepthOk=true, isZTLSOk=true, isVideoOk=true;
+    Services cbServices;
+    boolean isGRPorKRS, isGTITimeOk = true, isGTIDepthOk = true, isZTLSOk = true, isVideoOk = true;
     //    int rec1, rec2, rec8, rec12, rec13, rec55, rec56;
     final ArrayList<Record> records = new ArrayList<>();
     ArrayList<String> cameras;
 
-    public Well(int id, String name, int wellboreId, int sourceId, String productKey, String timeZone, int timeshift, String logsOffset, double currentDepth, String groupName) {
+    public Well(int id, String name, int wellboreId,
+                int sourceId, String productKey,
+                String timeZone, int timeshift,
+                String logsOffset, double currentDepth,
+                String groupName) {
         this.id = id;
         this.wellboreId = wellboreId;
         this.sourceId = sourceId;
@@ -33,11 +47,15 @@ public class Well {
 
     public void setRecords(Connection connection) {
         try {
-            ResultSet rs2, rs = connection.createStatement().executeQuery("select distinct log_id from record_idx_" + this.wellboreId + " order by log_id");
+            ResultSet rs2, rs = connection.createStatement().executeQuery(
+                    "select distinct log_id from record_idx_" + this.wellboreId + " order by log_id");
             while (rs.next()) {
                 int recordId = rs.getInt(1);
-                if (recordId == 1 || recordId == 2 || recordId == 8 || recordId == 55 || recordId == 56 || recordId == 68) {
-                    rs2 = connection.createStatement().executeQuery("select CONVERT_TZ(max(date), '+00:00', '" + this.logsOffset + "'), max(depth) from WITS_RECORD" + rs.getInt(1) + "_IDX_" + this.wellboreId);
+                if (recordId == 1 || recordId == 2 || recordId == 8 ||
+                        recordId == 55 || recordId == 56 || recordId == 68) {
+                    rs2 = connection.createStatement().executeQuery(
+                            "select CONVERT_TZ(max(date), '+00:00', '" + this.logsOffset + "'), max(depth) " +
+                                    "from WITS_RECORD" + rs.getInt(1) + "_IDX_" + this.wellboreId);
                     while (rs2.next()) {
                         Timestamp time = rs2.getTimestamp(1);
 
@@ -73,6 +91,22 @@ public class Well {
                 ", records=" + records +
                 '}';
     }
+
+    public void getInfofromCB(StatusProperties wellProp) {
+        try {
+            URL cbInfo = new URL("http://192.168.0.100:3170/get_well_info?project_id=" + wellProp.cbProjId +
+                    "&umb_well_id=" + this.id);
+            BufferedReader in = new BufferedReader(new InputStreamReader(cbInfo.openStream()));
+            this.cbServices=new Gson().fromJson(in, Services.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+}
+
+class Services {
+    Map<String, Boolean> services;
 }
 
 class Record {
@@ -95,3 +129,4 @@ class Record {
                 '}';
     }
 }
+

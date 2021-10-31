@@ -14,6 +14,10 @@ import java.util.stream.Collectors;
 
 public class WellValidator {
     public static void checkGTITime(Well well, Timestamp db_timenow) {
+        if (well.cbServices == null || well.cbServices.services.get("ГТИ") == null || !well.cbServices.services.get("ГТИ")) {
+            well.isGTITimeOk = true;
+            return;
+        }
         well.isGTITimeOk = false;
         List<Record> rec = well.records.stream().filter(r -> r.recordNum == 1).collect(Collectors.toList());
         if (rec.isEmpty()) {
@@ -25,22 +29,30 @@ public class WellValidator {
     }
 
     public static void checkGTIDepth(Well well) {
+        if (well.cbServices == null || well.cbServices.services.get("ГТИ") == null || !well.cbServices.services.get("ГТИ")) {
+            well.isGTIDepthOk = true;
+            return;
+        }
         well.isGTIDepthOk = false;
         List<Record> rec = well.records.stream().filter(r -> r.recordNum == 2).collect(Collectors.toList());
         if (rec.isEmpty()) {
             return;
         }
-        double dep_diff = rec.get(0).depth - well.currentDepth;
-        if (Math.abs(dep_diff) < 30)
-            well.isGTIDepthOk = true;
+        double dep_diff = well.currentDepth - rec.get(0).depth;
+        well.isGTIDepthOk = dep_diff < 30 && dep_diff > 0;
+
     }
 
     public static void checkZTLS(Well well) {
+        if (well.cbServices == null || well.cbServices.services.get("ЗТЛС") == null || !well.cbServices.services.get("ЗТЛС")) {
+            well.isZTLSOk = true;
+            return;
+        }
         well.isZTLSOk = false;
         List<Record> recs = well.records.stream().filter(r -> r.recordNum == 8 || r.recordNum == 55 || r.recordNum == 56 || r.recordNum == 68).collect(Collectors.toList());
         for (Record record : recs) {
             double dep_diff = record.depth - well.currentDepth;
-            if (Math.abs(dep_diff) < 40) {
+            if (dep_diff < 40) {
                 well.isZTLSOk = true;
                 break;
             }
@@ -49,7 +61,7 @@ public class WellValidator {
 
     public static void checkVideo(ArrayList<Well> wells, String projectName) {
         try {
-            Status.StatusProperties sP = new Status.StatusProperties(projectName);
+            StatusProperties sP = new StatusProperties(projectName);
 
             java.util.Properties config = new java.util.Properties();
             config.put("StrictHostKeyChecking", "no");
@@ -83,16 +95,13 @@ public class WellValidator {
                 InputStream in = channel.getInputStream();
                 channel.connect();
                 byte[] tmp = new byte[1024];
-                while (true) {
+                do {
                     while (in.available() > 0) {
                         int i = in.read(tmp, 0, 1024);
                         if (i < 0) break;
                         cameras += new String(tmp, 0, i);
                     }
-                    if (channel.isClosed()) {
-                        break;
-                    }
-                }
+                } while (!channel.isClosed());
                 well.cameras = (ArrayList<String>) Arrays.stream(cameras.split("\n")).collect(Collectors.toList());
                 channel.disconnect();
             }
@@ -102,6 +111,10 @@ public class WellValidator {
             e.printStackTrace();
         }
         for (Well well : wells) {
+            if (well.cbServices == null || well.cbServices.services.get("ВИДЕО") == null) {
+                well.isVideoOk = true;
+                continue;
+            }
             well.isVideoOk = true;
             for (int i = 0; i < well.cameras.size(); i++) {
                 if (well.cameras.get(i).matches(".*OK.*"))
@@ -117,9 +130,10 @@ public class WellValidator {
         }
     }
 
-    public static void wellsValidate(ArrayList<Well> wells, ArrayList<Well> wellsInShift, Timestamp db_timenow) {
+    public static void wellsValidate(ArrayList<Well> wells, ArrayList<Well> wellsInShift, Timestamp db_timenow, StatusProperties sp) {
         ArrayList<Well> problemWells = new ArrayList<>();
         for (Well well : wells) {
+            well.getInfofromCB(sp);
             WellValidator.checkGTITime(well, db_timenow);
             WellValidator.checkGTIDepth(well);
             WellValidator.checkZTLS(well);
@@ -173,7 +187,7 @@ public class WellValidator {
                 System.out.println(currGroup + ":");
                 System.out.println("\tШтатно работают:");
             }
-            if (well.isGTITimeOk && well.isGTIDepthOk && well.isVideoOk && well.isZTLSOk) {
+            if (well.isGTITimeOk && well.isVideoOk && well.isZTLSOk) {
                 System.out.println("\t" + counter++ + ". " + well.name);
             } else if (!well.isZTLSOk) {
                 Pattern pattern = Pattern.compile(", .*$");
@@ -184,7 +198,7 @@ public class WellValidator {
                 else
                     sameWellZTLS = wells.stream().filter(w -> w.name.matches(".*" + well.name + ".*\\(*ЗТЛС*\\).*")).collect(Collectors.toList());
                 if (!sameWellZTLS.isEmpty() && sameWellZTLS.get(0).isZTLSOk) {
-                    System.out.println("\t" + counter++ + ". " + well.name);
+                    System.out.println("\t" + counter++ + ". " + well.name + (well.isGTIDepthOk ? "" : " - С данными по глубине проблема, необходимо разобраться."));
                 } else {
                     problemWells.add(well);
                 }

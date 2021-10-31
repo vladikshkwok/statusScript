@@ -9,13 +9,14 @@ public class Status {
     private static Connection con;
     private static Statement stmt;
     private static ResultSet rs;
+    private static StatusProperties sP;
 
     public static void CreateStatus(String projectName) {
         ArrayList<Well> wells, wellsInShift;
 
         try {
 
-            StatusProperties sP = new StatusProperties(projectName);
+            sP = new StatusProperties(projectName);
             con = DriverManager.getConnection(sP.dburl, sP.dbuser, sP.dbpassword);
             stmt = con.createStatement();
 
@@ -23,7 +24,7 @@ public class Status {
             wells = getWells();
             wellsInShift = getWellsInShift();
             WellValidator.checkVideo(wells, projectName);
-            WellValidator.wellsValidate(wells, wellsInShift, db_timenow);
+            WellValidator.wellsValidate(wells, wellsInShift, db_timenow, sP);
 
         } catch (SQLException | IOException e) {
             e.printStackTrace();
@@ -74,7 +75,7 @@ public class Status {
                 "wgp.name from WITS_WELL ww inner join WITS_SOURCE ws ON ww.source_id=ws.id inner join WITS_WELLBORE " +
                 "wb ON ww.wellbore_id=wb.id inner join WITS_WELL_PROP wwp on ww.id=wwp.well_id inner join " +
                 "WITS_WELL_GROUP wgp on wwp.group_id=wgp.id where wwp.status_id=1 and " +
-                "ww.modified_date > \"2021-10-22 16:00\" and ws.product_key not in (select ws.product_key " +
+                "ww.modified_date > \"" + sP.shiftDate + " 00:00\" and ws.product_key not in (select ws.product_key " +
                 "from WITS_WELL ww inner join WITS_SOURCE ws ON ww.source_id=ws.id inner join WITS_WELLBORE wb " +
                 "ON ww.wellbore_id=wb.id inner join WITS_WELL_PROP wwp on ww.id=wwp.well_id  " +
                 "where wwp.status_id!=1) order by wgp.name, Name;";
@@ -93,45 +94,5 @@ public class Status {
         return wells;
     }
 
-    public static class StatusProperties {
-        String dburl, dbuser, dbpassword, host, huser, hpassword;
-        int hp=22;
-        StatusProperties(String projectName) throws IOException {
-            Properties properties = new Properties();
-            properties.load(new FileReader("config/application.properties"));
-            switch (projectName) {
-                case "n":
-                case "nova":
-                case "novatek":
-                    dburl = properties.getProperty("Nurl");
-                    dbuser = properties.getProperty("Nuser");
-                    dbpassword = properties.getProperty("Npassword");
-                    host = properties.getProperty("Nhost");
-                    huser = properties.getProperty("Nsuser");
-                    hpassword = properties.getProperty("Nspassword");
-                    hp=9082;
-                    break;
-                case "i":
-                case "igs":
-                    dburl = properties.getProperty("Iurl");
-                    dbuser = properties.getProperty("Iuser");
-                    dbpassword = properties.getProperty("Ipassword");
-                    host = properties.getProperty("Ihost");
-                    huser = properties.getProperty("Isuser");
-                    hpassword = properties.getProperty("Ispassword");
-                    break;
-                case "e":
-                case "eriell":
-                    dburl = properties.getProperty("Eurl");
-                    dbuser = properties.getProperty("Euser");
-                    dbpassword = properties.getProperty("Epassword");
-                    host = properties.getProperty("Ehost");
-                    huser = properties.getProperty("Esuser");
-                    hpassword = properties.getProperty("Espassword");
-                    break;
-
-            }
-        }
-    }
-
 }
+
