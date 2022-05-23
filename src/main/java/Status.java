@@ -23,8 +23,8 @@ public class Status {
             Timestamp db_timenow = getDBTime();
             wells = getWells();
             wellsInShift = getWellsInShift();
-            WellValidator.checkVideo(wells, projectName);
-            WellValidator.wellsValidate(wells, wellsInShift, db_timenow, sP);
+//            WellValidator.checkVideo(wells, projectName);
+            WellValidator.wellsValidate(wells, wellsInShift, db_timenow, sP, projectName);
 
         } catch (SQLException | IOException e) {
             e.printStackTrace();

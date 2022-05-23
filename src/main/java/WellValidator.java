@@ -102,6 +102,7 @@ public class WellValidator {
                         cameras += new String(tmp, 0, i);
                     }
                 } while (!channel.isClosed());
+                System.out.println(cameras);
                 well.cameras = (ArrayList<String>) Arrays.stream(cameras.split("\n")).collect(Collectors.toList());
                 channel.disconnect();
             }
@@ -130,7 +131,8 @@ public class WellValidator {
         }
     }
 
-    public static void wellsValidate(ArrayList<Well> wells, ArrayList<Well> wellsInShift, Timestamp db_timenow, StatusProperties sp) {
+    public static void wellsValidate(ArrayList<Well> wells, ArrayList<Well> wellsInShift,
+                                     Timestamp db_timenow, StatusProperties sp, String projectName) {
         ArrayList<Well> problemWells = new ArrayList<>();
         for (Well well : wells) {
             well.getInfofromCB(sp);
@@ -138,6 +140,7 @@ public class WellValidator {
             WellValidator.checkGTIDepth(well);
             WellValidator.checkZTLS(well);
         }
+        WellValidator.checkVideo(wells, projectName);
         String prevGroup = null, currGroup;
         int counter = 1;
         for (Well well : wells) {
